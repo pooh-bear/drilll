@@ -1,7 +1,7 @@
 /*
   Main Input Monitor
   This sketch combines all game inputs and outputs packet of values:
-  {[buttonReading],[switchReading],[forceSensor0Value],[forceSensor1Value],[forceSensor2Value],[forceSensor3Value]}
+  {[buttonReading],[switchReading],[forceSensor0Value],[forceSensor1Value]}
   
   Wiring:
   - RS232 to TTL: Pin 2 -> RXD, Pin 3 -> TXD, Null Modem needed
@@ -9,8 +9,6 @@
   - Slide Switch: Pin 8 -> Switch -> GND (INPUT_PULLUP)
   - Force Sensor 0: A0 -> 10kΩ -> 5V, A0 -> Sensor -> GND
   - Force Sensor 1: A1 -> 10kΩ -> 5V, A1 -> Sensor -> GND
-  - Force Sensor 2: A2 -> 10kΩ -> 5V, A2 -> Sensor -> GND
-  - Force Sensor 3: A3 -> 10kΩ -> 5V, A3 -> Sensor -> GND
 */
 #include <SoftwareSerial.h>
 
@@ -21,8 +19,6 @@ const int buttonPin = 5;        // Button pin
 const int switchPin = 8;        // Slide switch pin
 const int forceSensor0Pin = A0; // Force sensor 0 pin
 const int forceSensor1Pin = A1; // Force sensor 1 pin
-const int forceSensor2Pin = A2; // Force sensor 2 pin
-const int forceSensor3Pin = A3; // Force sensor 3 pin
 
 // Button state variables
 int buttonReading = HIGH;
@@ -40,12 +36,8 @@ const unsigned long switchDebounceDelay = 5;
 // Force sensor variables
 int forceSensor0Value = 0;
 int forceSensor1Value = 0;
-int forceSensor2Value = 0;
-int forceSensor3Value = 0;
 int lastForceSensor0Value = 0;
 int lastForceSensor1Value = 0;
-int lastForceSensor2Value = 0;
-int lastForceSensor3Value = 0;
 const int forceSensorChangeThreshold = 200;
 
 // polling rate
@@ -69,8 +61,6 @@ void setup() {
   // Configure analog pins (analog pins are analog by default)
   pinMode(forceSensor0Pin, INPUT);
   pinMode(forceSensor1Pin, INPUT);
-  pinMode(forceSensor2Pin, INPUT);
-  pinMode(forceSensor3Pin, INPUT);
   
   // Read initial states
   lastStableButtonState = digitalRead(buttonPin);
@@ -80,8 +70,6 @@ void setup() {
   
   lastForceSensor0Value = analogRead(forceSensor0Pin);
   lastForceSensor1Value = analogRead(forceSensor1Pin);
-  lastForceSensor2Value = analogRead(forceSensor2Pin);
-  lastForceSensor3Value = analogRead(forceSensor3Pin);
 }
 
 void loop() {
@@ -125,8 +113,6 @@ void loop() {
   // Read force sensor values
   forceSensor0Value = analogRead(forceSensor0Pin);
   forceSensor1Value = analogRead(forceSensor1Pin);
-  forceSensor2Value = analogRead(forceSensor2Pin);
-  forceSensor3Value = analogRead(forceSensor3Pin);
   
   // Check if force sensor 0 has changed significantly (>= 200)
   if (abs(forceSensor0Value - lastForceSensor0Value) >= forceSensorChangeThreshold) {
@@ -137,23 +123,13 @@ void loop() {
   if (abs(forceSensor1Value - lastForceSensor1Value) >= forceSensorChangeThreshold) {
     lastForceSensor1Value = forceSensor1Value;
   }
-
-    // Check if force sensor 2 has changed significantly (>= 200)
-  if (abs(forceSensor2Value - lastForceSensor2Value) >= forceSensorChangeThreshold) {
-    lastForceSensor2Value = forceSensor2Value;
-  }
-  
-  // Check if force sensor 3 has changed significantly (>= 200)
-  if (abs(forceSensor3Value - lastForceSensor3Value) >= forceSensorChangeThreshold) {
-    lastForceSensor3Value = forceSensor3Value;
-  }
   
   // Button state is checked every loop iteration for maximum responsiveness
 
   // report state to Godot
   if (polling_rate_hz > 0){ // polling_rate_hz is constant so this if/else should be optimized out by the compiler
     if ((millis() - last_poll_time_ms) >= polling_rate_period_ms){
-      // {!lastStableButtonState,!currentSwitchState,lastForceSensor0Value,lastForceSensor1Value,lastForceSensor2Value,lastForceSensor3Value}
+      // {!lastStableButtonState,!currentSwitchState,lastForceSensor0Value,lastForceSensor1Value}
       rs232Serial.print("{");
       rs232Serial.print(!lastStableButtonState); // LOW when button is pressed, negate so HIGH is reported when button is pressed
       rs232Serial.print(",");
@@ -162,16 +138,12 @@ void loop() {
       rs232Serial.print(lastForceSensor0Value);
       rs232Serial.print(",");
       rs232Serial.print(lastForceSensor1Value);
-      rs232Serial.print(",");
-      rs232Serial.print(lastForceSensor2Value);
-      rs232Serial.print(",");
-      rs232Serial.print(lastForceSensor3Value);
       rs232Serial.println("}");
       
       last_poll_time_ms = millis();
     }
   } else {
-    // {!lastStableButtonState,!currentSwitchState,lastForceSensor0Value,lastForceSensor1Value,lastForceSensor2Value,lastForceSensor3Value}
+    // {!lastStableButtonState,!currentSwitchState,lastForceSensor0Value,lastForceSensor1Value}
     rs232Serial.print("{");
     rs232Serial.print(!lastStableButtonState); // LOW when button is pressed, negate so HIGH is reported when button is pressed
     rs232Serial.print(",");
@@ -180,10 +152,6 @@ void loop() {
     rs232Serial.print(lastForceSensor0Value);
     rs232Serial.print(",");
     rs232Serial.print(lastForceSensor1Value);
-    rs232Serial.print(",");
-    rs232Serial.print(lastForceSensor2Value);
-    rs232Serial.print(",");
-    rs232Serial.print(lastForceSensor3Value);
     rs232Serial.println("}");
   }
 }
